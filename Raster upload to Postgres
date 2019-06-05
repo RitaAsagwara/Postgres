@@ -1,0 +1,44 @@
+import psycopg2, subprocess, sys, os, csv
+from osgeo import gdal,ogr
+
+#Change to the location of pgsql bin folder
+os.environ['PATH'] = r';path to gdal library'
+os.environ['PGHOST'] = 'host'
+os.environ['PGPORT'] = 'port'
+os.environ['PGUSER'] = 'username'
+os.environ['PGPASSWORD'] = 'password'
+os.environ['PGDATABASE'] = 'database'
+
+# Connect to the PostgreSQL server:
+conn = psycopg2.connect(database="database", user="username", host="host", password="password")
+cursor = conn.cursor()
+conn.set_session(autocommit=True)
+print('connected')
+
+testImg_input = r'image input'
+trainingImg_input = r'filepath_output'
+
+# Upload raster to Postgres as array
+# Loop through raster folder and push to postgres with the raster file name
+for raster in os.listdir(testImg_input):
+    if raster.endswith(".tif"):
+       name = raster.split(".tif")[0] #### extracting just the name
+       print(name)
+       raster = os.path.join(testImg_input, raster)
+       # Print the full path of the tiff raster
+       print(raster)
+       rastername = str(name)
+       conn = psycopg2.connect(database="database", user="username", host="localhost", password="password")
+       cursor = conn.cursor()
+       cmds = 'raster2pgsql -s 4326 -t auto "' + raster + '" raster.overview_Img |psql'
+       subprocess.call(cmds, shell=True)
+
+
+
+#
+# query
+# raster2pixel = """
+# SELECT x, y, val, ST_AsText(geom)
+# 	FROM (SELECT dp.* FROM public.img, LATERAL ST_PixelAsCentroids(rast, 1) AS dp) filterTable
+# 	where val < 200;
+# """
